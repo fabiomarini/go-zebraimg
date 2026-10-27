@@ -1,0 +1,11 @@
+# Editor
+.idea/
+.vscode/
+
+# Generated artifacts
+examples/output.png
+
+# Go build/test output
+*.test
+*.out
+/bin/

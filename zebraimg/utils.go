@@ -1,4 +1,4 @@
-package gozebraimg
+package zebraimg
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// ZebraGRFResult holds the encoded GRF data with metadata
+// ZebraGRFResult holds the encoded GRF data with metadata.
 type ZebraGRFResult struct {
 	AsciiData   string
 	Width       int
@@ -15,8 +15,7 @@ type ZebraGRFResult struct {
 	BytesPerRow int
 }
 
-// LoadImage loads an image from a file path
-// Supports PNG format
+// LoadImage loads a PNG image from a file path.
 func LoadImage(filePath string) (image.Image, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -27,21 +26,23 @@ func LoadImage(filePath string) (image.Image, error) {
 	return png.Decode(file)
 }
 
-// LoadImageFromBytes loads an image from a byte array
-// Supports PNG format
+// LoadImageFromBytes loads a PNG image from a byte array.
 func LoadImageFromBytes(data []byte) (image.Image, error) {
-	reader := bytes.NewReader(data)
-	return png.Decode(reader)
+	return png.Decode(bytes.NewReader(data))
 }
 
-// EncodeImageToGRF encodes an image to GRF format with metadata
+// EncodeImageToGRF encodes an image to GRF format with metadata.
+// If dither is true, applies Floyd-Steinberg error diffusion.
 func EncodeImageToGRF(img image.Image, dither bool) (*ZebraGRFResult, error) {
 	bounds := img.Bounds()
 	width := bounds.Dx()
 	height := bounds.Dy()
-	bytesPerRow := (width + 7) / 8
 
-	encoder := New(bytesPerRow)
+	encoder, err := New((width + 7) / 8)
+	if err != nil {
+		return nil, err
+	}
+
 	asciiData, err := encoder.EncodeImage(img, dither)
 	if err != nil {
 		return nil, err
@@ -51,17 +52,22 @@ func EncodeImageToGRF(img image.Image, dither bool) (*ZebraGRFResult, error) {
 		AsciiData:   asciiData,
 		Width:       width,
 		Height:      height,
-		BytesPerRow: bytesPerRow,
+		BytesPerRow: encoder.BytesPerRow,
 	}, nil
 }
 
-// DecodeGRFToImage decodes GRF result back to an image
+// DecodeGRFToImage decodes a GRF result back to an image. The decoded image
+// width is BytesPerRow*8, rounded up from the original width; padding pixels
+// are white.
 func DecodeGRFToImage(result *ZebraGRFResult) (image.Image, error) {
-	encoder := New(result.BytesPerRow)
+	encoder, err := New(result.BytesPerRow)
+	if err != nil {
+		return nil, err
+	}
 	return encoder.DecodeImage(result.AsciiData)
 }
 
-// SaveImage saves an image to a file
+// SaveImage saves an image to a PNG file.
 func SaveImage(img image.Image, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
