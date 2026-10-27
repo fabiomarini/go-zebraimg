@@ -426,7 +426,7 @@ func TestEncodeHexToAsciiLineRepeat(t *testing.T) {
 }
 
 func TestRealImageRoundTrip(t *testing.T) {
-	img, err := LoadImage("../examples/input.png")
+	img, err := LoadImage("../examples/input_1.png")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -445,11 +445,14 @@ func TestRealImageRoundTrip(t *testing.T) {
 		t.Fatalf("decoded size = %dx%d, want %dx%d", w, h, wantW, result.Height)
 	}
 
-	// Regression: the rightmost padding column must be white, not black.
-	lastCol := decoded.Bounds().Dx() - 1
-	for y := 0; y < result.Height; y++ {
-		if got := decoded.At(lastCol, y).(color.Gray).Y; got != 255 {
-			t.Fatalf("padding column pixel (x=%d, y=%d) = %d, want 255 (white)", lastCol, y, got)
+	// Regression: padding columns (when the width is not byte-aligned)
+	// must be white, not black.
+	if result.Width%8 != 0 {
+		lastCol := decoded.Bounds().Dx() - 1
+		for y := 0; y < result.Height; y++ {
+			if got := decoded.At(lastCol, y).(color.Gray).Y; got != 255 {
+				t.Fatalf("padding column pixel (x=%d, y=%d) = %d, want 255 (white)", lastCol, y, got)
+			}
 		}
 	}
 

@@ -1,9 +1,11 @@
 # Editor
 .idea/
 .vscode/
+.DS_Store
 
 # Generated artifacts
 examples/output.png
+examples/*.grf
 
 # Go build/test output
 *.test

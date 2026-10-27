@@ -3,7 +3,8 @@ package zebraimg
 import (
 	"bytes"
 	"image"
-	"image/png"
+	_ "image/jpeg" // register JPEG decoder for image.Decode
+	"image/png"    // named: SaveImage encodes PNG; also registers the decoder
 	"os"
 )
 
@@ -15,7 +16,7 @@ type ZebraGRFResult struct {
 	BytesPerRow int
 }
 
-// LoadImage loads a PNG image from a file path.
+// LoadImage loads a PNG or JPEG image from a file path.
 func LoadImage(filePath string) (image.Image, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -23,12 +24,14 @@ func LoadImage(filePath string) (image.Image, error) {
 	}
 	defer file.Close()
 
-	return png.Decode(file)
+	img, _, err := image.Decode(file)
+	return img, err
 }
 
-// LoadImageFromBytes loads a PNG image from a byte array.
+// LoadImageFromBytes loads a PNG or JPEG image from a byte array.
 func LoadImageFromBytes(data []byte) (image.Image, error) {
-	return png.Decode(bytes.NewReader(data))
+	img, _, err := image.Decode(bytes.NewReader(data))
+	return img, err
 }
 
 // EncodeImageToGRF encodes an image to GRF format with metadata.
