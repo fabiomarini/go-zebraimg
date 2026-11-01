@@ -1,4 +1,6 @@
-# Go ZebraGRF
+# Go ZebraIMG
+
+![Go ZebraIMG logo](./go-zebraimg.png)
 
 A Go library for encoding and decoding black-and-white images to/from Zebra GRF (Graphics Format) ASCII, used by Zebra printers.
 
