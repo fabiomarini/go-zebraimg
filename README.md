@@ -12,12 +12,30 @@ Bit convention follows the [ZPL `^GF` specification](https://docs.zebra.com/us/e
 - **Decoding**: Convert GRF ASCII back to images
 - **Floyd-Steinberg Dithering**: Optional error diffusion for better image quality
 - **Run-Length Compression**: Efficient ASCII encoding using G-Y/g-z notation
+- **CLI Tool**: Convert images from the command line
 
 ## Installation
 
 ```bash
 go get github.com/fabiomarini/go-zebraimg
 ```
+
+## Command-Line Tool
+
+```bash
+go install github.com/fabiomarini/go-zebraimg/cmd/zebraimg@latest
+
+# Write <name>.grf next to each input image
+zebraimg input.png input2.jpeg
+
+# Explicit output file, no dithering (best for black-and-white artwork)
+zebraimg -dither=false -o logo.grf logo.png
+
+# Pipe to stdout
+zebraimg -o - logo.png | pbcopy
+```
+
+Run `zebraimg -h` for all flags.
 
 ## Usage
 

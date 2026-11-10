@@ -6,6 +6,7 @@
 # Generated artifacts
 examples/output.png
 examples/*.grf
+examples/private
 
 # Go build/test output
 *.test
