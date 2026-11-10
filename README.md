@@ -25,16 +25,21 @@ go get github.com/fabiomarini/go-zebraimg
 ```bash
 go install github.com/fabiomarini/go-zebraimg/cmd/zebraimg@latest
 
-# Write <name>.grf next to each input image
+# Write a full ^GF command to <name>.zpl next to each input image
 zebraimg input.png input2.jpeg
 
-# Explicit output file, no dithering (best for black-and-white artwork)
-zebraimg -dither=false -o logo.grf logo.png
+# Resize to a 400 px-wide label graphic (aspect preserved)
+zebraimg -width 400 photo.jpeg
+
+# Bare GRF ASCII, no dithering (best for black-and-white artwork)
+zebraimg -raw -dither=false -o logo.grf logo.png
 
 # Pipe to stdout
 zebraimg -o - logo.png | pbcopy
 ```
 
+By default the output is a complete `^GFA,b,c,d,data^FS` command (recall it
+in a label with `^XG`); `-raw` emits the bare GRF ASCII instead.
 Run `zebraimg -h` for all flags.
 
 ## Usage
@@ -67,6 +72,24 @@ func main() {
     fmt.Printf("Dimensions: %dx%d, Bytes per row: %d\n",
         result.Width, result.Height, result.BytesPerRow)
 }
+```
+
+### ZPL Output and Resize
+
+```go
+// Resize to 400 px wide (height derived, Catmull-Rom resampling)
+img, err = zebraimg.ResizeImage(img, 400, 0)
+if err != nil {
+    panic(err)
+}
+
+result, err := zebraimg.EncodeImageToGRF(img, true)
+if err != nil {
+    panic(err)
+}
+
+// Full ZPL command: ^GFA,b,c,d,data^FS
+fmt.Println(result.ZPL())
 ```
 
 ### Decoding
@@ -114,6 +137,9 @@ The GRF format uses run-length encoding with the following special characters:
 | `!` | Fill rest of line with Fs (black) |
 
 Per the ZPL spec, bit `1` is a black print dot and bit `0` is white, so `,` fills with white and `!` fills with black.
+
+`result.ZPL()` wraps the data in a full `^GFA,b,c,d,data^FS` command, where
+`b` and `c` are the total graphic bytes and `d` the bytes per row.
 
 ## Testing
 

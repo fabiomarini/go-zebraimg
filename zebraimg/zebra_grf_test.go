@@ -460,3 +460,49 @@ func TestRealImageRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestZPLCommand(t *testing.T) {
+	result, err := EncodeImageToGRF(blackImage(8, 2), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Two rows of 0xFF: first row "!", second repeats the previous -> ":".
+	// b = c = total graphic bytes = 1 B/row * 2 rows; d = 1.
+	if want := "^GFA,2,2,1,!:^FS"; result.ZPL() != want {
+		t.Errorf("ZPL() = %q, want %q", result.ZPL(), want)
+	}
+}
+
+func TestResizeImage(t *testing.T) {
+	src := whiteImage(100, 50)
+
+	got, err := ResizeImage(src, 50, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w, h := got.Bounds().Dx(), got.Bounds().Dy(); w != 50 || h != 25 {
+		t.Errorf("ResizeImage(50, 0) = %dx%d, want 50x25", w, h)
+	}
+
+	got, err = ResizeImage(src, 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w, h := got.Bounds().Dx(), got.Bounds().Dy(); w != 20 || h != 10 {
+		t.Errorf("ResizeImage(0, 10) = %dx%d, want 20x10", w, h)
+	}
+
+	got, err = ResizeImage(src, 100, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != src {
+		t.Error("ResizeImage at the same size should return the source image")
+	}
+
+	for _, tc := range [][2]int{{0, 0}, {-1, 10}, {10, -1}} {
+		if _, err := ResizeImage(src, tc[0], tc[1]); err == nil {
+			t.Errorf("ResizeImage(%d, %d) succeeded, want error", tc[0], tc[1])
+		}
+	}
+}

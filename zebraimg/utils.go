@@ -2,10 +2,13 @@ package zebraimg
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	_ "image/jpeg" // register JPEG decoder for image.Decode
 	"image/png"    // named: SaveImage encodes PNG; also registers the decoder
 	"os"
+
+	"golang.org/x/image/draw"
 )
 
 // ZebraGRFResult holds the encoded GRF data with metadata.
@@ -14,6 +17,14 @@ type ZebraGRFResult struct {
 	Width       int
 	Height      int
 	BytesPerRow int
+}
+
+// ZPL returns the encoded data as a complete ZPL ^GF command:
+// ^GFA,b,c,d,data^FS, where b and c are the total graphic bytes and d is
+// the bytes per row. Recall the graphic inside a label (^XA...^XZ) with ^XG.
+func (r *ZebraGRFResult) ZPL() string {
+	total := r.BytesPerRow * r.Height
+	return fmt.Sprintf("^GFA,%d,%d,%d,%s^FS", total, total, r.BytesPerRow, r.AsciiData)
 }
 
 // LoadImage loads a PNG or JPEG image from a file path.
@@ -32,6 +43,31 @@ func LoadImage(filePath string) (image.Image, error) {
 func LoadImageFromBytes(data []byte) (image.Image, error) {
 	img, _, err := image.Decode(bytes.NewReader(data))
 	return img, err
+}
+
+// ResizeImage scales an image to the given pixel dimensions using
+// Catmull-Rom resampling, which downscales print artwork cleanly. A zero
+// dimension is derived from the other to preserve the aspect ratio; both
+// zero or any negative is an error.
+func ResizeImage(img image.Image, width, height int) (image.Image, error) {
+	if width < 0 || height < 0 || (width == 0 && height == 0) {
+		return nil, fmt.Errorf("zebraimg: invalid resize dimensions %dx%d", width, height)
+	}
+
+	b := img.Bounds()
+	if width == 0 {
+		width = max(b.Dx()*height/b.Dy(), 1)
+	}
+	if height == 0 {
+		height = max(b.Dy()*width/b.Dx(), 1)
+	}
+	if width == b.Dx() && height == b.Dy() {
+		return img, nil
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, width, height))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), img, b, draw.Src, nil)
+	return dst, nil
 }
 
 // EncodeImageToGRF encodes an image to GRF format with metadata.
